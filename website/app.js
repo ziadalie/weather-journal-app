@@ -9,37 +9,51 @@ const apiKey = '7eeeedba4664e91a391fe1aa03393610';
 
 // Assigning a variable for the generate button
 const btn = document.getElementById('generate');
+      
+async function getWeather(url) {
+    const res = await fetch(url);
+    const response = await res.json();
+    return Promise.resolve(response);
+}
 
-// Generate button click event using asynchronous JavaScript
-btn.addEventListener('click', async listenning => {
-    // Getting zip code value
-    const zipCode = document.getElementById('zip').value;
+// Function for updating UI
+async function updateUI(){
+    const response =  await fetch("/getData", {
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
     
+    const data = await response.json();
+    // Updating the temperature property
+    document.getElementById('temp').innerHTML = Math.round(data.temp) + ' degrees';
+    
+    // Updating the feelings property
+    document.getElementById('content').innerHTML = data.content;
+    
+    // Updating the date property
+    document.getElementById('date').innerHTML = data.date;
+    
+    }
+    // Generate button click event using asynchronous JavaScript
+    btn.addEventListener('click', async listenning => {
+    const zipCode = document.getElementById('zip').value;
     // Api call by zip code
     const url = `https://api.openweathermap.org/data/2.5/weather?zip=${zipCode}&appid=${apiKey}&units=metric`;
     
-    // Requesting weather data using fetch api
-    const res = await fetch(url);
-    const response = await res.json();
     
-    // Getting temperature value
-    const tempValue = response.main.temp;
-    // Updating the temperature property
-    document.getElementById('temp').innerHTML = tempValue;
+    await getWeather(url, zipCode).then( data =>{
     
-    // Getting feelings value
+    const tempValue = data.main.temp;
+    
     const feelings = document.getElementById('feelings').value;
-    // Updating the feelings property
-    document.getElementById('content').innerHTML = feelings;
-
-    // Create a new date instance dynamically with JS
-    let d = new Date();
-    let newDate = months[d.getMonth()]+'.'+ d.getDate()+'.'+ d.getFullYear();
-    // Updating the date property
-    document.getElementById('date').innerHTML = newDate;
     
-    // Sending a request to addData route using fetch
-    await fetch('/addData', {
+    let d = new Date();
+    
+    let newDate = months[d.getMonth()]+'.'+ d.getDate()+'.'+ d.getFullYear();
+    
+    fetch('/addData', {
         method: 'POST', 
         credentials: 'same-origin',
         headers: {
@@ -48,9 +62,12 @@ btn.addEventListener('click', async listenning => {
         body: JSON.stringify({
             date: newDate,
             temp: tempValue,
-            content: feelings
+            content: feelings,
         }),
-      });
+    
+    })
+    }).then(async () =>{
+    
+    await updateUI();
+    });
 });
-
-
